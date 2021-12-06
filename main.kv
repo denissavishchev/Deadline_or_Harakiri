@@ -1,28 +1,28 @@
-
-<CreateTask>:
-    id: createTask
-    name: 'createTask'
-    elevation: 20
-    md_bg_color: 1,1,1,1
-    radius: [20]
-    orientation: "vertical"
-
-    MDFloatLayout:
-        md_bg_color: 1,0,0,1
-        id: bar
-        radius: [20]
-        size_hint: .95, .9
-        pos_hint: {"center_x": .5, "center_y": .5}
-        md_bg_color: 75/255, 0/255, 130/255, .9
-    MDLabel:
-        id: Diameter
-        text: 'Hello'
-        markup: True
-        font_size: '15sp'
-        size_hint_x: .5
-        theme_text_color: "Custom"
-        text_color: 1, 1, 1, 1
-        pos_hint: {"center_x": .5, "center_y": .5}
+#
+#<CreateTask>:
+#    id: createTask
+#    name: 'createTask'
+#    elevation: 20
+#    md_bg_color: 1,1,1,1
+#    radius: [20]
+#    orientation: "vertical"
+#
+#    MDFloatLayout:
+#        md_bg_color: 1,0,0,1
+#        id: bar
+#        radius: [20]
+#        size_hint: .95, .9
+#        pos_hint: {"center_x": .5, "center_y": .5}
+#        md_bg_color: 75/255, 0/255, 130/255, .9
+#    MDLabel:
+#        id: Diameter
+#        text: 'Hello'
+#        markup: True
+#        font_size: '15sp'
+#        size_hint_x: .5
+#        theme_text_color: "Custom"
+#        text_color: 1, 1, 1, 1
+#        pos_hint: {"center_x": .5, "center_y": .5}
 
 MDScreen:
     taskList: taskList
@@ -92,12 +92,12 @@ MDScreen:
             Color:
                 rgba: (0/255, 200/255, 200/255, 1)
         MDTextField:
-            id: task_text
+            id: name
             hint_text: "Name... "
             size_hint_x: .85
             pos_hint: {"center_x": .43, "center_y": .7}
             max_text_length: 50
-            on_text_validate: (app.add_task(task_text, date_text.text), app.close_dialog())
+#            on_text_validate: (app.add_task(task_text, date_text.text), app.close_dialog())
 
         MDFloatLayout:
             size_hint_y: .9
@@ -120,11 +120,11 @@ MDScreen:
                 text_color: 75/255, 0/255, 130/255, 1
                 background_color: 0, 0, 0, 0
                 multiline: True
-                on_text_validate: (app.add_task(task_text, date_text.text), app.close_dialog())
+#                on_text_validate: (app.add_task(task_text, date_text.text), app.close_dialog())
         MDLabel:
 #                spacing: '10dp'
             pos_hint: {"center_x": .51, "center_y": .95}
-            id: date_text
+            id: date_end
 
 
         MDIconButton:
@@ -140,28 +140,65 @@ MDScreen:
 
         MDFillRoundFlatButton:
             text: "SAVE"
-            on_release: (app.add_task(task_text, date_text.text), app.close_dialog())
+            on_release: (app.add_to_db(name.text, comment.text, date_end.text), app.close_dialog())
         Widget:
         MDRoundFlatButton:
             text: 'CANCEL'
             on_release: app.close_dialog()
 
-<ListItemWithCheckbox>:
-    id: the_list_item
-    markup: True
+<ListOfTasks>
+    id: AddIngredient
+    elevation: 20
+    md_bg_color: 1,1,1,1
+    radius: [8]
+#    name: name
+#    comment: comment
+    MDFloatLayout:
+        id: bar
+        size_hint: .01, .9
+        pos_hint: {"center_x": .02, "center_y": .5}
+        md_bg_color: 75/255, 0/255, 130/255, 1
+    MDLabel:
+        id: name
+        text: root.name
+#        text: str(root.name)
+#            markup: True
+#        md_bg_color: 75/255, 0/255, 130/255, 1
+        font_size: '20sp'
+        size_hint_x: .8
+#        theme_text_color: "Custom"
+#        text_color: 1, 1, 1, 1
+#        font_name: 'KaushanScript-Regular.ttf'
+        pos_hint: {"center_x": .46, "center_y": .5}
 
-    LeftCheckbox:
-        id: check
-        on_release:
-            root.mark(check, the_list_item)
-
-    IconRightWidget:
-        icon: 'trash-can-outline'
+    MDLabel:
+        id: comment
+        text: root.comment
+#        text: root.comment
+        markup: True
+        size_hint_x: .9
         theme_text_color: "Custom"
-        text_color: 1, 0, 0, 1
-        on_release:
-            root.delete_item(the_list_item)
+        text_color: 1, 1, 1, 0
+        font_name: 'KaushanScript-Regular.ttf'
+        pos_hint: {"center_x": .46, "center_y": .6}
 
+    MDLabel:
+        id: date_end
+        text: root.date_end
+#        text: root.comment
+        markup: True
+        size_hint_x: .9
+#        theme_text_color: "Custom"
+#        text_color: 1, 1, 1, 0
+#        font_name: 'KaushanScript-Regular.ttf'
+        pos_hint: {"center_x": .86, "center_y": .5}
+
+    MDIconButton:
+        icon: 'comment-text-outline'
+        pos_hint: {"center_x": .95, "center_y": .5}
+        theme_text_color: 'Custom'
+        text_color: (75/255, 0/255, 130/255, .1) if comment.text =='' else (255/255, 255/255, 255/255, 1)
+        on_release: app.show_comment(comment.text)
 
 <Buttons@MDFillRoundFlatButton>
     user_font_size: '15sp'

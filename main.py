@@ -1,4 +1,6 @@
 from kivy.core.window import Window
+import sqlite3 as sql
+from time import strftime
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivymd.app import MDApp
@@ -9,6 +11,7 @@ from kivymd.uix.picker import MDDatePicker
 from datetime import datetime
 from kivymd.uix.list import TwoLineAvatarIconListItem, ILeftBodyTouch
 from kivymd.uix.selectioncontrol import MDCheckbox
+from kivy.properties import ObjectProperty
 
 Window.size = (360, 770)  # (1080, 2340)
 
@@ -20,7 +23,7 @@ class DialogContent(MDBoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # set the date_text label to today's date when useer first opens dialog box
-        self.ids.date_text.text = str(datetime.now().strftime('%A %d %B %Y'))
+        self.ids.date_end.text = str(datetime.now().strftime('%A %d %B %Y'))
 
 
     def show_date_picker(self):
@@ -34,30 +37,12 @@ class DialogContent(MDBoxLayout):
         more friendly form then changes the date label on the dialog to that"""
 
         date = value.strftime('%A %d %B %Y')
-        self.ids.date_text.text = str(date)
+        self.ids.date_end.text = str(date)
 
-class ListItemWithCheckbox(TwoLineAvatarIconListItem):
-    '''Custom list item'''
-
-    def __init__(self, pk=None, **kwargs):
-        super().__init__(**kwargs)
-        # state a pk which we shall use link the list items with the database primary keys
-        self.pk = pk
-
-
-    def mark(self, check, the_list_item):
-        '''mark the task as complete or incomplete'''
-        if check.active == True:
-            # add strikethrough to the text if the checkbox is active
-            the_list_item.text = '[s]'+the_list_item.text+'[/s]'
-        else:
-            # we shall add code to remove the strikethrough later
-            pass
-
-    def delete_item(self, the_list_item):
-        '''Delete the task'''
-        self.parent.remove_widget(the_list_item)
-
+class ListOfTasks(FloatLayout):
+    name = ObjectProperty()
+    comment = ObjectProperty()
+    date_end = ObjectProperty()
 
 
 class LeftCheckbox(ILeftBodyTouch, MDCheckbox):
@@ -84,14 +69,14 @@ class Harakiri(MDApp, Screen):
     def close_dialog(self, *args):
         self.task_list_dialog.dismiss()
 
-    def add_task(self, task, task_date):
-        '''Add task to the list of tasks'''
-
-        print(task.text, task_date)
-        screen_manager.get_screen('main').taskList.add_widget(ListItemWithCheckbox(text='[b]' + task.text + '[/b]', secondary_text=task_date))
+    # def add_task(self, name, comment, date_end):
+    #     '''Add task to the list of tasks'''
+    #
+    #     print(name, comment)
+    #     screen_manager.get_screen('main').taskList.add_widget(ListOfTasks(name=name, comment=comment, date_end=date_end))
         # self.root.ids['container'].add_widget(
         #     ListItemWithCheckbox(text='[b]' + task.text + '[/b]', secondary_text=task_date))
-        task.text = ''  # set the dialog entry to an empty string(clear the text entry)
+        name = ''  # set the dialog entry to an empty string(clear the text entry)
 
 
     def build(self):
@@ -104,7 +89,44 @@ class Harakiri(MDApp, Screen):
 
         return screen_manager
 
+    def add_to_db(self, name, comment, date_end):
+        screen_manager.get_screen('main').taskList.add_widget(
+            ListOfTasks(name=name, comment=comment, date_end=date_end))
+        status = False
+        now = strftime('%Y-%m-%d %H:%M:%S')
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""INSERT INTO harakiri (names, comment, status, time_end, time_start) VALUES (?,?,?,?,?)""",
+                    (name, comment, status, date_end, now))
+        con.commit()
+        con.close()
 
+    def on_start(self):
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""SELECT names, comment, time_end FROM harakiri """)
+        for x in cur:
+            name = x[0]
+            comment = x[1]
+            date_end = x[2]
+            screen_manager.get_screen('main').taskList.add_widget(
+                ListOfTasks(name=name, comment=comment, date_end=date_end))
+        con.commit()
+        con.close()
+
+
+    con = sql.connect('death.db')
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE  IF NOT EXISTS  harakiri(
+            UserID integer PRIMARY KEY AUTOINCREMENT,
+            names text,
+            comment text,
+            status text,
+            time_end text,
+            time_start timestamp)
+            """)
+    con.commit()
+    con.close()
 
 
 

@@ -8,10 +8,11 @@ from kivymd.uix.floatlayout import FloatLayout
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.picker import MDDatePicker
-from datetime import datetime
+import datetime
 from kivymd.uix.list import TwoLineAvatarIconListItem, ILeftBodyTouch
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivy.properties import ObjectProperty
+import time
 
 Window.size = (360, 770)  # (1080, 2340)
 
@@ -23,7 +24,7 @@ class DialogContent(MDBoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # set the date_text label to today's date when useer first opens dialog box
-        self.ids.date_end.text = str(datetime.now().strftime('%A %d %B %Y'))
+        self.ids.date_end.text = str(datetime.datetime.now().strftime('%A %d %B %Y'))
 
 
     def show_date_picker(self):
@@ -36,7 +37,7 @@ class DialogContent(MDBoxLayout):
         """This functions gets the date from the date picker and converts its it a
         more friendly form then changes the date label on the dialog to that"""
 
-        date = value.strftime('%A %d %B %Y')
+        date = value.strftime('%Y %m %d')
         self.ids.date_end.text = str(date)
 
 class ListOfTasks(FloatLayout):
@@ -101,6 +102,7 @@ class Harakiri(MDApp, Screen):
         con.commit()
         con.close()
 
+
     def on_start(self):
         con = sql.connect('death.db')
         cur = con.cursor()
@@ -109,8 +111,18 @@ class Harakiri(MDApp, Screen):
             name = x[0]
             comment = x[1]
             date_end = x[2]
+
+            date = [int(word) for word in date_end.split() if word.isdigit()]
+            deadline = datetime.datetime(int(date[0]),int(date[1]),int(date[2])) - datetime.datetime.now()
+            hours = str(deadline.seconds // 3600)
+            minutes = str((deadline.seconds % 3600) // 60)
+            seconds = str((deadline.seconds % 3600) % 60)
+
+            date_cooldown = (f'Days: {deadline.days}, {hours}:{minutes}:{seconds}')
+
             screen_manager.get_screen('main').taskList.add_widget(
-                ListOfTasks(name=name, comment=comment, date_end=date_end))
+                ListOfTasks(name=name, comment=comment, date_end=date_cooldown))
+
         con.commit()
         con.close()
 

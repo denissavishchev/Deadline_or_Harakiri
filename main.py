@@ -13,6 +13,7 @@ from kivymd.uix.list import TwoLineAvatarIconListItem, ILeftBodyTouch
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivy.properties import ObjectProperty
 import time
+import threading
 
 Window.size = (360, 770)  # (1080, 2340)
 
@@ -40,6 +41,8 @@ class DialogContent(MDBoxLayout):
         date = value.strftime('%Y %m %d')
         self.ids.date_end.text = str(date)
 
+
+
 class ListOfTasks(FloatLayout):
     name = ObjectProperty()
     comment = ObjectProperty()
@@ -51,9 +54,39 @@ class LeftCheckbox(ILeftBodyTouch, MDCheckbox):
 
 
 class Harakiri(MDApp, Screen):
+    until_midnight_time = ObjectProperty()
 
-    def createTask(self):
-        screen_manager.get_screen('main').taskList.add_widget(CreateTask())
+    def time_until_end_of_day(self, dt=None):
+        if dt is None:
+            dt = datetime.datetime.now()
+        time_until = ((24 - dt.hour - 1) * 60 * 60) + ((60 - dt.minute - 1) * 60) + (60 - dt.second)
+
+        future_date = datetime.datetime.now() + datetime.timedelta(seconds=time_until)
+
+        while True:
+            curr_date = datetime.datetime.now()
+            rem_time = future_date - curr_date
+            total_seconds = int(rem_time.total_seconds())
+
+            if total_seconds > 0:
+                days, h_remainder = divmod(total_seconds, 86400)
+                hours, remainder = divmod(h_remainder, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                self.until_midnight_time = (f"Time Left: {hours} hours, {minutes} minutes, {seconds} seconds")
+
+                time.sleep(1)
+                break
+            else:
+                break
+
+        # hours = str(time_until // 3600)
+        # minutes = str((time_until % 3600) // 60)
+        # seconds = str((time_until % 3600) % 60)
+        # print(hours+' '+minutes+' '+seconds)
+        # time.sleep(1)
+
+    # def createTask(self):
+    #     screen_manager.get_screen('main').taskList.add_widget(CreateTask())
 
     task_list_dialog = None
 
@@ -93,6 +126,7 @@ class Harakiri(MDApp, Screen):
     def add_to_db(self, name, comment, date_end):
         screen_manager.get_screen('main').taskList.add_widget(
             ListOfTasks(name=name, comment=comment, date_end=date_end))
+
         status = False
         now = strftime('%Y-%m-%d %H:%M:%S')
         con = sql.connect('death.db')
@@ -102,8 +136,32 @@ class Harakiri(MDApp, Screen):
         con.commit()
         con.close()
 
+        screen_manager.get_screen('main').taskList.clear_widgets()
+################
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""SELECT names, comment, time_end FROM harakiri """)
+        for x in cur:
+            name = x[0]
+            comment = x[1]
+            date_end = x[2]
 
-    def on_start(self):
+            date = [int(word) for word in date_end.split() if word.isdigit()]
+            deadline = datetime.datetime(int(date[0]), int(date[1]), int(date[2])) - datetime.datetime.now()
+            # hours = str(deadline.seconds // 3600)
+            # minutes = str((deadline.seconds % 3600) // 60)
+            # seconds = str((deadline.seconds % 3600) % 60)
+
+            date_cooldown = (f'Days: {deadline.days}')  # , {hours}:{minutes}:{seconds}
+
+            screen_manager.get_screen('main').taskList.add_widget(
+                ListOfTasks(name=name, comment=comment, date_end=date_cooldown))
+
+        con.commit()
+        con.close()
+
+
+    def on_start(self, dt=None):
         con = sql.connect('death.db')
         cur = con.cursor()
         cur.execute("""SELECT names, comment, time_end FROM harakiri """)
@@ -114,11 +172,11 @@ class Harakiri(MDApp, Screen):
 
             date = [int(word) for word in date_end.split() if word.isdigit()]
             deadline = datetime.datetime(int(date[0]),int(date[1]),int(date[2])) - datetime.datetime.now()
-            hours = str(deadline.seconds // 3600)
-            minutes = str((deadline.seconds % 3600) // 60)
-            seconds = str((deadline.seconds % 3600) % 60)
+            # hours = str(deadline.seconds // 3600)
+            # minutes = str((deadline.seconds % 3600) // 60)
+            # seconds = str((deadline.seconds % 3600) % 60)
 
-            date_cooldown = (f'Days: {deadline.days}, {hours}:{minutes}:{seconds}')
+            date_cooldown = (f'Days: {deadline.days}')#, {hours}:{minutes}:{seconds}
 
             screen_manager.get_screen('main').taskList.add_widget(
                 ListOfTasks(name=name, comment=comment, date_end=date_cooldown))
@@ -126,6 +184,32 @@ class Harakiri(MDApp, Screen):
         con.commit()
         con.close()
 
+#########time############
+        def cooldown(dt=None):
+            if dt is None:
+                dt = datetime.datetime.now()
+            time_until = ((24 - dt.hour - 1) * 60 * 60) + ((60 - dt.minute - 1) * 60) + (60 - dt.second)
+
+            future_date = datetime.datetime.now() + datetime.timedelta(seconds=time_until)
+
+            while True:
+                curr_date = datetime.datetime.now()
+                rem_time = future_date - curr_date
+                total_seconds = int(rem_time.total_seconds())
+
+                if total_seconds > 0:
+                    days, h_remainder = divmod(total_seconds, 86400)
+                    hours, remainder = divmod(h_remainder, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    self.until_midnight_time = (f"Time Left: {hours} hours, {minutes} minutes, {seconds} seconds")
+
+                    time.sleep(1)
+
+                else:
+                    break
+        t = threading.Thread(target=cooldown, name='time', args=(), daemon=True)
+        t.start()
+        # t.join()
 
     con = sql.connect('death.db')
     cur = con.cursor()

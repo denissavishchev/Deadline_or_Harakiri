@@ -33,9 +33,16 @@ MDScreen:
         font_size: '35sp'
         theme_text_color: "Custom"
         text_color: 0 / 255, 0 / 255, 255 / 255, 1
+    MDLabel:
+        id: until_midnight_time
+        text: str(app.until_midnight_time)
+        pos_hint: {"center_x": .55, "center_y": .9}
+#        font_size: '35sp'
+        theme_text_color: "Custom"
+        text_color: 0 / 255, 0 / 255, 255 / 255, 1
     MDFloatLayout:
-        size_hint: .95, .85
-        pos_hint: {"center_x": .5, "center_y": .52}
+        size_hint: .95, .75
+        pos_hint: {"center_x": .5, "center_y": .48}
         canvas:
             Color:
                 rgba: (200/255, 200/255, 200/255, 1)
@@ -65,7 +72,7 @@ MDScreen:
         size_hint: .2, .05
 #        font_size: '30sp'
         on_release:
-            app.createTask()
+            app.time_until_end_of_day()
 
     Buttons:
         text: 'Create'

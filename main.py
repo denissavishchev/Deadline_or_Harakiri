@@ -47,6 +47,7 @@ class ListOfTasks(FloatLayout):
     name = ObjectProperty()
     comment = ObjectProperty()
     date_end = ObjectProperty()
+    progress = ObjectProperty()
 
 
 class LeftCheckbox(ILeftBodyTouch, MDCheckbox):
@@ -55,6 +56,7 @@ class LeftCheckbox(ILeftBodyTouch, MDCheckbox):
 
 class Harakiri(MDApp, Screen):
     until_midnight_time = ObjectProperty()
+
 
     def time_until_end_of_day(self, dt=None):
         if dt is None:
@@ -128,7 +130,7 @@ class Harakiri(MDApp, Screen):
             ListOfTasks(name=name, comment=comment, date_end=date_end))
 
         status = False
-        now = strftime('%Y-%m-%d %H:%M:%S')
+        now = strftime('%Y %m %d')
         con = sql.connect('death.db')
         cur = con.cursor()
         cur.execute("""INSERT INTO harakiri (names, comment, status, time_end, time_start) VALUES (?,?,?,?,?)""",
@@ -164,22 +166,29 @@ class Harakiri(MDApp, Screen):
     def on_start(self, dt=None):
         con = sql.connect('death.db')
         cur = con.cursor()
-        cur.execute("""SELECT names, comment, time_end FROM harakiri """)
+        cur.execute("""SELECT names, comment, time_end, time_start FROM harakiri """)
         for x in cur:
             name = x[0]
             comment = x[1]
             date_end = x[2]
+            date_start = x[3]
 
-            date = [int(word) for word in date_end.split() if word.isdigit()]
-            deadline = datetime.datetime(int(date[0]),int(date[1]),int(date[2])) - datetime.datetime.now()
+            time_end = [int(word) for word in date_end.split() if word.isdigit()]
+            deadline = datetime.datetime(int(time_end[0]),int(time_end[1]),int(time_end[2])) - datetime.datetime.now()
+
+            time_start = [int(word) for word in date_start.split() if word.isdigit()]
+            full_days = datetime.datetime(int(time_end[0]),int(time_end[1]),int(time_end[2])) - datetime.datetime(int(time_start[0]),int(time_start[1]),int(time_start[2]))
             # hours = str(deadline.seconds // 3600)
             # minutes = str((deadline.seconds % 3600) // 60)
             # seconds = str((deadline.seconds % 3600) % 60)
 
             date_cooldown = (f'Days: {deadline.days}')#, {hours}:{minutes}:{seconds}
 
+            progress = (deadline.days / full_days.days) * 100
+
             screen_manager.get_screen('main').taskList.add_widget(
-                ListOfTasks(name=name, comment=comment, date_end=date_cooldown))
+                ListOfTasks(name=name, comment=comment, date_end=date_cooldown, progress=progress))
+
 
         con.commit()
         con.close()

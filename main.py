@@ -57,6 +57,13 @@ class LeftCheckbox(ILeftBodyTouch, MDCheckbox):
 class Harakiri(MDApp, Screen):
     until_midnight_time = ObjectProperty()
 
+    def show_comment(self, comment):
+        self.comment = comment
+        self.dialog = MDDialog(
+            title=str(comment), on_touch_down=MDDialog.dismiss, md_bg_color=(173/255, 255/255, 125/255, .4),
+            radius=[20])
+        self.dialog.open()
+
 
     def time_until_end_of_day(self, dt=None):
         if dt is None:
@@ -182,7 +189,7 @@ class Harakiri(MDApp, Screen):
             # minutes = str((deadline.seconds % 3600) // 60)
             # seconds = str((deadline.seconds % 3600) % 60)
 
-            date_cooldown = (f'Days: {deadline.days}')#, {hours}:{minutes}:{seconds}
+            date_cooldown = (f'Days: {deadline.days}[color=#808080][size=24]({full_days.days})[/size][/color]')#, {hours}:{minutes}:{seconds}
 
             progress = (deadline.days / full_days.days) * 100
 

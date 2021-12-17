@@ -14,6 +14,11 @@ from kivymd.uix.selectioncontrol import MDCheckbox
 from kivy.properties import ObjectProperty
 import time
 import threading
+from kivymd.uix.behaviors import FakeRectangularElevationBehavior
+from kivymd.uix.behaviors import TouchBehavior
+from kivy.uix.popup import Popup
+from kivymd.uix.button import MDFillRoundFlatButton
+from kivy.uix.boxlayout import BoxLayout
 
 Window.size = (360, 770)  # (1080, 2340)
 
@@ -43,11 +48,50 @@ class DialogContent(MDBoxLayout):
 
 
 
-class ListOfTasks(FloatLayout):
+class ListOfTasks(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
     name = ObjectProperty()
     comment = ObjectProperty()
     date_end = ObjectProperty()
     progress = ObjectProperty()
+
+    def on_long_touch(self, *args):
+        layout = BoxLayout(orientation='vertical')
+        layout1 = FloatLayout()
+
+        self.editButton = MDFillRoundFlatButton(text='Edit', pos_hint={'center_x': .18, 'center_y': .6},
+                                                size_hint=(.3, .3),
+                                                theme_text_color='Custom',
+                                                text_color=(1, 1, 1, 1),
+                                                on_release=self.edit_button)
+        layout1.add_widget(self.editButton)
+        self.deleteButton = MDFillRoundFlatButton(text='Delete', pos_hint={'center_x': .55, 'center_y': .6},
+                                                  size_hint=(.3, .3),
+                                                  theme_text_color='Custom',
+                                                  text_color=(1, 1, 1, 1),
+                                                  on_release=self.delete_button)
+        layout1.add_widget(self.deleteButton)
+        self.closeButton = MDFillRoundFlatButton(text='X', pos_hint={'center_x': .85, 'center_y': .6},
+                                                 size_hint=(.1, .3),
+                                                 theme_text_color='Custom',
+                                                 text_color=(1, 1, 1, 1),
+                                                 on_release=self.closeWindow)
+        layout1.add_widget(self.closeButton)
+        layout.add_widget(layout1)
+
+        self.pop = Popup(title=self.name, background_color='white', #title_font='KaushanScript-Regular.ttf',
+                          content=layout,
+                          size_hint=(None, None), size=(600, 300), pos_hint={'center_x': .5, 'center_y': .5})
+        self.pop.open()
+        return layout
+
+    def edit_button(self, obj):
+        print('Edit')
+
+    def delete_button(self, obj):
+        print('Delete')
+
+    def closeWindow(self, obj):
+        self.pop.dismiss()
 
 
 class LeftCheckbox(ILeftBodyTouch, MDCheckbox):

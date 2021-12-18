@@ -19,6 +19,8 @@ from kivymd.uix.behaviors import TouchBehavior
 from kivy.uix.popup import Popup
 from kivymd.uix.button import MDFillRoundFlatButton
 from kivy.uix.boxlayout import BoxLayout
+from kivymd.uix.snackbar import Snackbar
+from kivy.metrics import dp
 
 Window.size = (360, 770)  # (1080, 2340)
 
@@ -58,13 +60,81 @@ class ListOfTasks(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
         layout = BoxLayout(orientation='vertical')
         layout1 = FloatLayout()
 
-        self.editButton = MDFillRoundFlatButton(text='Edit', pos_hint={'center_x': .18, 'center_y': .6},
+        self.doneButton = MDFillRoundFlatButton(text='Done', pos_hint={'center_x': .18, 'center_y': .6},
                                                 size_hint=(.3, .3),
                                                 theme_text_color='Custom',
                                                 text_color=(1, 1, 1, 1),
-                                                on_release=self.edit_button)
+                                                on_release=self.done_button)
+        layout1.add_widget(self.doneButton)
+        self.editButton = MDFillRoundFlatButton(text='Edit', pos_hint={'center_x': .55, 'center_y': .6},
+                                                  size_hint=(.3, .3),
+                                                  theme_text_color='Custom',
+                                                  text_color=(1, 1, 1, 1),
+                                                  on_release=self.edit_button)
         layout1.add_widget(self.editButton)
-        self.deleteButton = MDFillRoundFlatButton(text='Delete', pos_hint={'center_x': .55, 'center_y': .6},
+        self.deleteButton = MDFillRoundFlatButton(text='Delete', pos_hint={'center_x': .85, 'center_y': .6},
+                                                 size_hint=(.1, .3),
+                                                 theme_text_color='Custom',
+                                                 text_color=(1, 1, 1, 1),
+                                                 on_release=self.delete_button)
+        layout1.add_widget(self.deleteButton)
+        layout.add_widget(layout1)
+
+        self.pop = Popup(title=self.name, background_color='white', #title_font='KaushanScript-Regular.ttf',
+                          content=layout,
+                          size_hint=(None, None), size=(600, 300), pos_hint={'center_x': .5, 'center_y': .5})
+        self.pop.open()
+        return layout
+
+    def done_button(self, obj):
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute(f"""SELECT time_start FROM harakiri """)
+
+        for t in cur:
+            start_time = t[0]
+            date = [int(word) for word in start_time.split() if word.isdigit()]
+            done_time = datetime.datetime.now() - datetime.datetime(int(date[0]), int(date[1]), int(date[2]))
+
+        con.commit()
+        con.close()
+
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute(f"""UPDATE harakiri SET status = 1, time_end = {done_time.days}  WHERE names = '{self.name}'""")
+        con.commit()
+        con.close()
+
+        screen_manager.get_screen('main').taskList.clear_widgets()
+        ################
+        self.on_start = Harakiri()
+        self.on_start.on_start()
+
+        self.pop.dismiss()
+
+        self.snackbar = Harakiri()
+        self.snackbar.Snackbar_message(
+            message=str(self.name) + "[color=#ff6600] added to History![/color]")
+
+
+    def edit_button(self, obj):
+        print('Edit')
+
+    def delete_button(self, obj):
+        self.pop.dismiss()
+
+class HistoryList(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
+    name = ObjectProperty()
+    comment = ObjectProperty()
+    date_end = ObjectProperty()
+    progress = ObjectProperty()
+
+    def on_long_touch(self, *args):
+        layout = BoxLayout(orientation='vertical')
+        layout1 = FloatLayout()
+
+
+        self.deleteButton = MDFillRoundFlatButton(text='Delete', pos_hint={'center_x': .2, 'center_y': .6},
                                                   size_hint=(.3, .3),
                                                   theme_text_color='Custom',
                                                   text_color=(1, 1, 1, 1),
@@ -84,14 +154,25 @@ class ListOfTasks(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
         self.pop.open()
         return layout
 
-    def edit_button(self, obj):
-        print('Edit')
-
     def delete_button(self, obj):
-        print('Delete')
+        con = sql.connect('death.db')
+        cur = con.cursor()
+
+        cur.execute(f"""DELETE FROM harakiri WHERE names = '{self.name}' """)
+
+        con.commit()
+        con.close()
+
+        screen_manager.get_screen('history').taskList.clear_widgets()
+        self.history = Harakiri()
+        self.history.history()
+
+        self.pop.dismiss()
+
 
     def closeWindow(self, obj):
         self.pop.dismiss()
+
 
 
 class LeftCheckbox(ILeftBodyTouch, MDCheckbox):
@@ -100,6 +181,49 @@ class LeftCheckbox(ILeftBodyTouch, MDCheckbox):
 
 class Harakiri(MDApp, Screen):
     until_midnight_time = ObjectProperty()
+
+    def clear(self):
+        screen_manager.get_screen('history').taskList.clear_widgets()
+
+
+
+    def history(self):
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""SELECT names, comment, status, time_end FROM harakiri """)
+        for x in cur:
+            name = x[0]
+            comment = x[1]
+            stat = x[2]
+            date_end = x[3]
+
+            if stat == '1':
+
+                # date = [int(word) for word in date_end.split() if word.isdigit()]
+                # deadline = datetime.datetime(int(date[0]), int(date[1]), int(date[2])) - datetime.datetime.now()
+                # hours = str(deadline.seconds // 3600)
+                # minutes = str((deadline.seconds % 3600) // 60)
+                # seconds = str((deadline.seconds % 3600) % 60)
+
+                days_left = (f'Done in: {date_end}')  # , {hours}:{minutes}:{seconds}
+
+                screen_manager.get_screen('history').taskList.add_widget(
+                    HistoryList(name=name, comment=comment, date_end=days_left))
+
+            else:
+                continue
+
+        con.commit()
+        con.close()
+
+    def Snackbar_message(self, message):
+        Snackbar(text=f'[font=KaushanScript-Regular.ttf]{message}[/font]',
+                 snackbar_x='10dp', snackbar_y='10dp',
+                 duration=1,
+                 size_hint_x=(Window.width - (dp(10) * 2)) / Window.width,
+                 bg_color=(0/255, 143/255, 17/255, 1),
+                 radius=[20],
+                 font_size='20sp').open()
 
     def show_comment(self, comment):
         self.comment = comment
@@ -246,7 +370,7 @@ class Harakiri(MDApp, Screen):
 
     def add_to_db(self, name, comment, date_end):
         screen_manager.get_screen('main').taskList.add_widget(
-            ListOfTasks(name=name, comment=comment, date_end=date_end))
+            ListOfTasks(name=name, comment=comment, date_end=date_end, progress=50))
 
         status = False
         now = strftime('%Y %m %d')
@@ -259,56 +383,39 @@ class Harakiri(MDApp, Screen):
 
         screen_manager.get_screen('main').taskList.clear_widgets()
 ################
-        con = sql.connect('death.db')
-        cur = con.cursor()
-        cur.execute("""SELECT names, comment, time_end FROM harakiri """)
-        for x in cur:
-            name = x[0]
-            comment = x[1]
-            date_end = x[2]
-
-            date = [int(word) for word in date_end.split() if word.isdigit()]
-            deadline = datetime.datetime(int(date[0]), int(date[1]), int(date[2])) - datetime.datetime.now()
-            # hours = str(deadline.seconds // 3600)
-            # minutes = str((deadline.seconds % 3600) // 60)
-            # seconds = str((deadline.seconds % 3600) % 60)
-
-            date_cooldown = (f'Days: {deadline.days}')  # , {hours}:{minutes}:{seconds}
-
-            screen_manager.get_screen('main').taskList.add_widget(
-                ListOfTasks(name=name, comment=comment, date_end=date_cooldown))
-
-        con.commit()
-        con.close()
-
+        self.on_start()
 
     def on_start(self, dt=None):
         con = sql.connect('death.db')
         cur = con.cursor()
-        cur.execute("""SELECT names, comment, time_end, time_start FROM harakiri """)
+        cur.execute("""SELECT names, comment, status, time_end, time_start FROM harakiri """)
         for x in cur:
             name = x[0]
             comment = x[1]
-            date_end = x[2]
-            date_start = x[3]
+            stat = x[2]
+            date_end = x[3]
+            date_start = x[4]
 
-            time_end = [int(word) for word in date_end.split() if word.isdigit()]
-            deadline = datetime.datetime(int(time_end[0]),int(time_end[1]),int(time_end[2])) - datetime.datetime.now()
+            if stat == '0':
 
-            time_start = [int(word) for word in date_start.split() if word.isdigit()]
-            full_days = datetime.datetime(int(time_end[0]),int(time_end[1]),int(time_end[2])) - datetime.datetime(int(time_start[0]),int(time_start[1]),int(time_start[2]))
-            # hours = str(deadline.seconds // 3600)
-            # minutes = str((deadline.seconds % 3600) // 60)
-            # seconds = str((deadline.seconds % 3600) % 60)
+                time_end = [int(word) for word in date_end.split() if word.isdigit()]
+                deadline = datetime.datetime(int(time_end[0]),int(time_end[1]),int(time_end[2])) - datetime.datetime.now()
 
-            date_cooldown = (f'Days: {deadline.days}[color=#3d3d3d][size=24]({full_days.days})[/size][/color]')#, {hours}:{minutes}:{seconds}
+                time_start = [int(word) for word in date_start.split() if word.isdigit()]
+                full_days = datetime.datetime(int(time_end[0]),int(time_end[1]),int(time_end[2])) - datetime.datetime(int(time_start[0]),int(time_start[1]),int(time_start[2]))
+                # hours = str(deadline.seconds // 3600)
+                # minutes = str((deadline.seconds % 3600) // 60)
+                # seconds = str((deadline.seconds % 3600) % 60)
 
-            progress = (deadline.days / full_days.days) * 100
+                date_cooldown = (f'Days: {deadline.days}[color=#3d3d3d][size=24]({full_days.days})[/size][/color]')#, {hours}:{minutes}:{seconds}
 
-            screen_manager.get_screen('main').taskList.add_widget(
-                ListOfTasks(name=name, comment=comment, date_end=date_cooldown, progress=progress))
+                progress = int((deadline.days / full_days.days) * 100)
 
+                screen_manager.get_screen('main').taskList.add_widget(
+                    ListOfTasks(name=name, comment=comment, date_end=date_cooldown, progress=progress))
 
+            else:
+                continue
         con.commit()
         con.close()
 

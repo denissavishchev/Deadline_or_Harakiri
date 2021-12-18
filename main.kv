@@ -4,21 +4,21 @@ MDScreen:
     taskList: taskList
     name: 'main'
     MDFloatLayout:
-        md_bg_color: 123/255, 195/255, 66/255, .3
+        md_bg_color: 0,0,0,1#0/255, 143/255, 17/255, .1
 
         MDLabel:
             text: 'Harakiri'
             pos_hint: {"center_x": .8, "center_y": .97}
             font_size: '35sp'
             theme_text_color: "Custom"
-            text_color: 0 / 255, 0 / 255, 255 / 255, 1
+            text_color: 0/255, 143/255, 17/255, 1
         MDLabel:
             id: until_midnight_time
             text: str(app.until_midnight_time)
             pos_hint: {"center_x": .55, "center_y": .9}
     #        font_size: '35sp'
             theme_text_color: "Custom"
-            text_color: 0 / 255, 0 / 255, 255 / 255, 1
+            text_color: 0/255, 143/255, 17/255, 1
         MDFloatLayout:
             size_hint: .95, .75
             pos_hint: {"center_x": .5, "center_y": .48}
@@ -84,6 +84,9 @@ MDScreen:
             pos_hint: {"center_x": .43, "center_y": .7}
             max_text_length: 50
 #            on_text_validate: (app.add_task(task_text, date_text.text), app.close_dialog())
+            cursor_color: 0/255, 143/255, 17/255, 1
+            text_color: 0/255, 143/255, 17/255, 1
+            helper_text_color: 0/255, 143/255, 17/255, 1
 
         MDFloatLayout:
             size_hint_y: .9
@@ -102,8 +105,9 @@ MDScreen:
                 max_text_length: 200
                 pos_hint: {"center_x": .5, "center_y": .5}
                 height: 240
-                cursor_color: 75/255, 0/255, 130/255, 1
-                text_color: 75/255, 0/255, 130/255, 1
+                cursor_color: 0/255, 143/255, 17/255, 1
+                text_color: 0/255, 143/255, 17/255, 1
+                hint_text_color: 0/255, 143/255, 17/255, 1
                 background_color: 0, 0, 0, 0
                 multiline: True
 #                on_text_validate: (app.add_task(task_text, date_text.text), app.close_dialog())
@@ -111,6 +115,8 @@ MDScreen:
 #                spacing: '10dp'
             pos_hint: {"center_x": .51, "center_y": .95}
             id: date_end
+            theme_text_color: "Custom"
+            text_color: 0/255, 143/255, 17/255, 1
 
 
         MDIconButton:
@@ -118,6 +124,8 @@ MDScreen:
             pos_hint: {"center_x": .95, "center_y": .7}
             on_release: root.show_date_picker()
             padding: '10dp'
+            theme_text_color: "Custom"
+            text_color: 0/255, 143/255, 17/255, 1
 
 
 
@@ -140,7 +148,7 @@ MDScreen:
 #    name: name
 #    comment: comment
     MDFloatLayout:
-        md_bg_color: (255/255, 0/255, 0/255, .5) if progress.value <= 10 else (11/255, 156/255, 49/255, .2)
+        md_bg_color: (255/255, 0/255, 0/255, .5) if progress.value <= 10 else (0/255, 143/255, 17/255, .2)
 
         size_hint_y: .9
         pos_hint: {"center_x": .5, "center_y": .5}
@@ -202,6 +210,6 @@ MDScreen:
 
 <Buttons@MDFillRoundFlatButton>
     user_font_size: '15sp'
-    md_bg_color: 75/255, 0/255, 130/255, .5
+    md_bg_color: 0/255, 143/255, 17/255, 1
     theme_text_color: 'Custom'
-    text_color: 1,1,1,1
+    text_color: 0,0,0,1

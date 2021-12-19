@@ -106,24 +106,56 @@ class ListOfTasks(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
         con.commit()
         con.close()
 
+
         screen_manager.get_screen('main').taskList.clear_widgets()
         ################
-        self.on_start = Harakiri()
-        self.on_start.on_start()
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""SELECT names, comment, status, time_end, time_start FROM harakiri """)
+        for x in cur:
+            name = x[0]
+            comment = x[1]
+            stat = x[2]
+            date_end = x[3]
+            date_start = x[4]
+
+            if stat == '0':
+
+                time_end = [int(word) for word in date_end.split() if word.isdigit()]
+                deadline = datetime.datetime(int(time_end[0]), int(time_end[1]),
+                                             int(time_end[2])) - datetime.datetime.now()
+
+                time_start = [int(word) for word in date_start.split() if word.isdigit()]
+                full_days = datetime.datetime(int(time_end[0]), int(time_end[1]), int(time_end[2])) - datetime.datetime(
+                    int(time_start[0]), int(time_start[1]), int(time_start[2]))
+
+                date_cooldown = (
+                    f'Days: {deadline.days}[color=#3d3d3d][size=24]({full_days.days})[/size][/color]')  # , {hours}:{minutes}:{seconds}
+
+                progress = int((deadline.days / full_days.days) * 100)
+
+                screen_manager.get_screen('main').taskList.add_widget(
+                    ListOfTasks(name=name, comment=comment, date_end=date_cooldown, progress=progress))
+
+            else:
+                continue
+        con.commit()
+        con.close()
+
 
         self.pop.dismiss()
 
-        self.snackbar = Harakiri()
-        self.snackbar.Snackbar_message(
-            message=str(self.name) + "[color=#ff6600] added to History![/color]")
+        # self.snackbar = Harakiri()
+        # self.snackbar.Snackbar_message(
+        #     message=str(self.name) + "[color=#ff6600] added to History![/color]")
 
 
     def edit_button(self, obj):
         layout = BoxLayout(orientation='vertical')
         layout1 = FloatLayout()
 
-        self.editComment = MDTextFieldRect(text=self.comment, background_color=(1, 1, 1, .9), pos=(100, 610),
-                                         size_hint=(.95, .7), multiline=True)
+        self.editComment = MDTextFieldRect(text=self.comment, background_color=(0/255, 143/255, 17/255, .3), pos=(100, 610),
+                                         size_hint=(.95, .7), multiline=True, foreground_color=(1,1,1,1))
         layout1.add_widget(self.editComment)
 
         self.editButton = MDFillRoundFlatButton(text='Edit', pos_hint={'center_x': .5, 'center_y': .1},
@@ -206,14 +238,33 @@ class HistoryList(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
         con = sql.connect('death.db')
         cur = con.cursor()
 
-        cur.execute(f"""DELETE FROM harakiri WHERE names = '{self.name}' """)
+        # cur.execute(f"""DELETE FROM harakiri WHERE names = '{self.name}' """)
 
         con.commit()
         con.close()
 
         screen_manager.get_screen('history').taskList.clear_widgets()
-        self.history = Harakiri()
-        self.history.history()
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""SELECT names, comment, status, time_end FROM harakiri """)
+        for x in cur:
+            name = x[0]
+            comment = x[1]
+            stat = x[2]
+            date_end = x[3]
+
+            if stat == '1':
+
+                days_left = (f'Done in: {date_end}')
+
+                screen_manager.get_screen('history').taskList.add_widget(
+                    HistoryList(name=name, comment=comment, date_end=days_left))
+
+            else:
+                continue
+
+        con.commit()
+        con.close()
 
         self.pop.dismiss()
 
@@ -432,6 +483,7 @@ class Harakiri(MDApp, Screen):
         screen_manager.get_screen('main').taskList.clear_widgets()
 ################
         self.on_start()
+
 
     def on_start(self, dt=None):
         con = sql.connect('death.db')

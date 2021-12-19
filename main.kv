@@ -24,7 +24,7 @@ MDScreen:
             pos_hint: {"center_x": .5, "center_y": .48}
             canvas:
                 Color:
-                    rgba: (200/255, 200/255, 200/255, 1)
+                    rgba: (0/255, 143/255, 17/255, .2)
                 RoundedRectangle:
                     size: self.size
                     pos: self.pos
@@ -135,7 +135,11 @@ MDScreen:
 
         MDFillRoundFlatButton:
             text: "SAVE"
-            on_release: (app.add_to_db(name.text, comment.text, date_end.text), app.close_dialog())
+            on_release:
+                app.add_to_db(name.text, comment.text, date_end.text)
+                app.close_dialog()
+                name.text=''
+                comment.text=''
         Widget:
         MDRoundFlatButton:
             text: 'CANCEL'

@@ -21,6 +21,7 @@ from kivymd.uix.button import MDFillRoundFlatButton
 from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.snackbar import Snackbar
 from kivy.metrics import dp
+from kivymd.uix.textfield import MDTextFieldRect
 
 Window.size = (360, 770)  # (1080, 2340)
 
@@ -118,9 +119,56 @@ class ListOfTasks(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
 
 
     def edit_button(self, obj):
-        print('Edit')
+        layout = BoxLayout(orientation='vertical')
+        layout1 = FloatLayout()
+
+        self.editComment = MDTextFieldRect(text=self.comment, background_color=(1, 1, 1, .9), pos=(100, 610),
+                                         size_hint=(.95, .7), multiline=True)
+        layout1.add_widget(self.editComment)
+
+        self.editButton = MDFillRoundFlatButton(text='Edit', pos_hint={'center_x': .5, 'center_y': .1},
+                                                size_hint=(.3, .15),
+                                                theme_text_color='Custom',
+                                                text_color=(1, 1, 1, 1),
+                                                on_release=self.edit_complete)
+        layout1.add_widget(self.editButton)
+        layout.add_widget(layout1)
+
+        self.pop2 = Popup(title=self.name + ' (Comment)', background_color=(1, 1, 1, 1), #title_font='KaushanScript-Regular.ttf',
+                          content=layout,
+                          size_hint=(None, None), size=(600, 620), pos_hint={'center_x': .5, 'center_y': .5},
+                          auto_dismiss=True)
+        self.pop2.open()
+        return layout
+
+    def edit_complete(self, obj):
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""SELECT comment FROM harakiri""")
+        name = self.name
+        comment = self.comment
+        cur.execute(f"""UPDATE harakiri SET comment = '{self.editComment.text}' WHERE names = '{name}' AND comment = '{comment}'""")
+
+        con.commit()
+        con.close()
+
+        self.pop.dismiss()
+        self.pop2.dismiss()
 
     def delete_button(self, obj):
+        con = sql.connect('death.db')
+        cur = con.cursor()
+        cur.execute("""SELECT comment FROM harakiri""")
+        name = self.name
+        comment = self.comment
+        cur.execute(f"""DELETE FROM harakiri WHERE names = '{name}' AND comment = '{comment}'""")
+        con.commit()
+        con.close()
+
+        screen_manager.get_screen('main').taskList.clear_widgets()
+        self.on_start = Harakiri()
+        self.on_start.on_start()
+
         self.pop.dismiss()
 
 class HistoryList(FloatLayout, FakeRectangularElevationBehavior, TouchBehavior):
